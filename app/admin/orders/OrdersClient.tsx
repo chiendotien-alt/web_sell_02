@@ -14,7 +14,6 @@ type Order = {
   paymentStatus: string;
   status: string;
   total: number;
-  createdAt: string;
   items: OrderItem[];
 };
 
