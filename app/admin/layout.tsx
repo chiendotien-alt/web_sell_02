@@ -8,7 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-gray-100">
       {authed && (
-        <div className="bg-gray-900 text-white">
+        <div className="bg-gray-900 text-white print:hidden">
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-6 text-sm">
             <span className="font-semibold">🔧 Quản trị shop</span>
             <Link href="/admin" className="hover:text-brand-light">Tổng quan</Link>

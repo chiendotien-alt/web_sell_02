@@ -8,10 +8,19 @@ export const dynamic = "force-dynamic";
 export default async function AdminOrdersPage() {
   if (!isAdminAuthed()) return <AdminLogin />;
 
-  const orders = await prisma.order.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: true } } },
-  });
+  const [ordersRaw, products] = await Promise.all([
+    prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { items: { include: { product: true } } },
+    }),
+    prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      include: { variants: true },
+    }),
+  ]);
 
-  return <OrdersClient initialOrders={orders} />;
+  const orders = ordersRaw.map((o) => ({ ...o, createdAt: o.createdAt.toISOString() }));
+
+  return <OrdersClient initialOrders={orders} products={products} />;
 }

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { formatVND } from "@/lib/format";
+import { exportOrdersToCsv } from "@/lib/csv";
+import AdminCreateOrderModal from "./AdminCreateOrderModal";
 
 type OrderItem = {
   id: string;
@@ -12,6 +15,7 @@ type OrderItem = {
 };
 type Order = {
   id: string;
+  createdAt: string;
   customerName: string;
   phone: string;
   address: string;
@@ -22,6 +26,15 @@ type Order = {
   total: number;
   items: OrderItem[];
 };
+
+type Variant = {
+  id: string;
+  optionValue1: string | null;
+  optionValue2: string | null;
+  stock: number;
+  priceOverride: number | null;
+};
+type Product = { id: string; name: string; price: number; stock: number; variants: Variant[] };
 
 const STATUS_LABEL: Record<string, string> = {
   NEW: "Mới",
@@ -39,8 +52,17 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: "bg-gray-200 text-gray-500",
 };
 
-export default function OrdersClient({ initialOrders }: { initialOrders: Order[] }) {
+export default function OrdersClient({
+  initialOrders,
+  products,
+}: {
+  initialOrders: Order[];
+  products: Product[];
+}) {
   const [orders, setOrders] = useState(initialOrders);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   async function updateStatus(id: string, status: string) {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
@@ -61,17 +83,78 @@ export default function OrdersClient({ initialOrders }: { initialOrders: Order[]
     });
   }
 
+  async function refreshOrders() {
+    const res = await fetch("/api/admin/orders");
+    const data = await res.json();
+    setOrders(data.orders || []);
+  }
+
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return orders.filter((o) => {
+      const matchesStatus = statusFilter === "ALL" || o.status === statusFilter;
+      const matchesSearch =
+        !q ||
+        o.customerName.toLowerCase().includes(q) ||
+        o.phone.toLowerCase().includes(q) ||
+        o.id.toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [orders, search, statusFilter]);
+
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-4">Đơn hàng ({orders.length})</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h1 className="text-xl font-semibold">Đơn hàng ({filteredOrders.length}/{orders.length})</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportOrdersToCsv(filteredOrders, `don-hang-${Date.now()}.csv`)}
+            className="border border-gray-300 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium"
+          >
+            📊 Xuất Excel
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-brand hover:bg-brand-dark text-white rounded-lg px-4 py-2 text-sm font-medium"
+          >
+            + Tạo đơn thủ công
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <input
+          placeholder="Tìm theo tên, SĐT, mã đơn..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 min-w-[200px] border rounded-lg px-3 py-2 text-sm"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="ALL">Tất cả trạng thái</option>
+          {Object.entries(STATUS_LABEL).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="space-y-3">
-        {orders.map((o) => (
-          <div key={o.id} className="bg-white rounded-xl shadow-sm p-4">
+        {filteredOrders.map((o) => (
+          <div key={o.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div>
-                <p className="font-medium">{o.customerName} • {o.phone}</p>
+                <p className="font-medium">
+                  {o.customerName} • {o.phone}
+                </p>
                 <p className="text-xs text-gray-500">{o.address}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  #{o.id.slice(-8).toUpperCase()} · {new Date(o.createdAt).toLocaleString("vi-VN")}
+                </p>
               </div>
               <span className={`text-xs font-medium px-2 py-1 rounded ${STATUS_COLOR[o.status]}`}>
                 {STATUS_LABEL[o.status]}
@@ -92,6 +175,14 @@ export default function OrdersClient({ initialOrders }: { initialOrders: Order[]
               <p className="font-semibold text-brand">{formatVND(o.total)}</p>
 
               <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  href={`/admin/orders/${o.id}/print`}
+                  target="_blank"
+                  className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-500 hover:bg-gray-50"
+                >
+                  🖨️ In đơn
+                </Link>
+
                 <button
                   onClick={() => togglePaid(o.id, o.paymentStatus)}
                   className={`text-xs px-2 py-1 rounded border ${
@@ -118,10 +209,23 @@ export default function OrdersClient({ initialOrders }: { initialOrders: Order[]
             </div>
           </div>
         ))}
-        {orders.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-10">Chưa có đơn hàng nào.</p>
+        {filteredOrders.length === 0 && (
+          <p className="text-center text-gray-400 text-sm py-10">
+            {orders.length === 0 ? "Chưa có đơn hàng nào." : "Không tìm thấy đơn hàng phù hợp."}
+          </p>
         )}
       </div>
+
+      {showCreateModal && (
+        <AdminCreateOrderModal
+          products={products}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            refreshOrders();
+          }}
+        />
+      )}
     </div>
   );
 }
