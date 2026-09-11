@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminProductsPage() {
   if (!isAdminAuthed()) return <AdminLogin />;
 
-  const products = await prisma.product.findMany({ orderBy: { createdAt: "desc" } });
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { variants: true },
+  });
 
   return <ProductsClient initialProducts={products} />;
 }

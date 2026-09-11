@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import ChatWidget from "@/components/ChatWidget";
+
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_SHOP_NAME || "Shop Của Bạn",
@@ -11,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body>
+      <body className={beVietnamPro.variable}>
         <Header />
         <main className="min-h-screen">{children}</main>
         <ChatWidget />

@@ -13,9 +13,9 @@ export default async function HomePage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="bg-gradient-to-r from-brand to-brand-dark text-white rounded-xl p-6 mb-6">
-        <h1 className="text-2xl font-bold mb-1">Chào mừng bạn đến với shop 🎉</h1>
-        <p className="text-white/90 text-sm">
+      <div className="bg-gradient-to-r from-brand to-brand-dark text-white rounded-2xl p-7 mb-8 shadow-sm">
+        <h1 className="text-2xl md:text-3xl font-bold mb-1.5">Chào mừng bạn đến với shop 🎉</h1>
+        <p className="text-white/90 text-sm md:text-base">
           Có thắc mắc gì cứ bấm vào khung chat ở góc phải để được tư vấn và đặt hàng nhanh nhé!
         </p>
       </div>

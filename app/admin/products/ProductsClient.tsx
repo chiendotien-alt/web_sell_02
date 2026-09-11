@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { formatVND } from "@/lib/format";
 
+type Variant = {
+  id: string;
+  optionValue1: string | null;
+  optionValue2: string | null;
+  stock: number;
+  priceOverride: number | null;
+};
+
 type Product = {
   id: string;
   name: string;
@@ -14,6 +22,9 @@ type Product = {
   stock: number;
   category: string;
   isActive: boolean;
+  optionName1: string | null;
+  optionName2: string | null;
+  variants: Variant[];
 };
 
 const emptyForm = {
@@ -25,7 +36,15 @@ const emptyForm = {
   stock: "",
   category: "",
   isActive: true,
+  optionName1: "",
+  optionValues1: "",
+  optionName2: "",
+  optionValues2: "",
 };
+
+function variantLabel(v: Variant) {
+  return [v.optionValue1, v.optionValue2].filter(Boolean).join(" / ");
+}
 
 export default function ProductsClient({ initialProducts }: { initialProducts: Product[] }) {
   const [products, setProducts] = useState(initialProducts);
@@ -33,6 +52,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   const [form, setForm] = useState<any>(emptyForm);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   function startCreate() {
     setEditingId(null);
@@ -51,6 +71,10 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       stock: String(p.stock),
       category: p.category,
       isActive: p.isActive,
+      optionName1: p.optionName1 || "",
+      optionValues1: Array.from(new Set(p.variants.map((v) => v.optionValue1).filter(Boolean))).join(", "),
+      optionName2: p.optionName2 || "",
+      optionValues2: Array.from(new Set(p.variants.map((v) => v.optionValue2).filter(Boolean))).join(", "),
     });
     setShowForm(true);
   }
@@ -88,6 +112,25 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
     setProducts((prev) => prev.filter((p) => p.id !== id));
   }
 
+  async function updateVariant(
+    productId: string,
+    variantId: string,
+    patch: { stock?: number; priceOverride?: number | null }
+  ) {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id !== productId
+          ? p
+          : { ...p, variants: p.variants.map((v) => (v.id === variantId ? { ...v, ...patch } : v)) }
+      )
+    );
+    await fetch(`/api/admin/variants/${variantId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -119,7 +162,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           <input
             required
             type="number"
-            placeholder="Giá bán (VNĐ)"
+            placeholder="Giá bán mặc định (VNĐ)"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             className="border rounded-lg px-3 py-2"
@@ -132,14 +175,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             className="border rounded-lg px-3 py-2"
           />
           <input
-            required
-            type="number"
-            placeholder="Tồn kho"
-            value={form.stock}
-            onChange={(e) => setForm({ ...form, stock: e.target.value })}
-            className="border rounded-lg px-3 py-2"
-          />
-          <input
             placeholder="Danh mục (VD: Thời trang)"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -149,8 +184,56 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             placeholder="Link ảnh sản phẩm (URL)"
             value={form.imageUrl}
             onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+            className="border rounded-lg px-3 py-2"
+          />
+
+          <div className="sm:col-span-2 border-t pt-3 mt-1">
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              Phân loại sản phẩm (bỏ trống nếu sản phẩm chỉ có 1 loại duy nhất)
+            </p>
+          </div>
+
+          <input
+            required={!!form.optionValues1}
+            placeholder='Tên nhóm 1, VD: "Màu sắc"'
+            value={form.optionName1}
+            onChange={(e) => setForm({ ...form, optionName1: e.target.value })}
+            className="border rounded-lg px-3 py-2"
+          />
+          <input
+            placeholder='Các giá trị, cách nhau bởi dấu phẩy. VD: "Đỏ, Xanh, Vàng"'
+            value={form.optionValues1}
+            onChange={(e) => setForm({ ...form, optionValues1: e.target.value })}
+            className="border rounded-lg px-3 py-2"
+          />
+          <input
+            required={!!form.optionValues2}
+            placeholder='Tên nhóm 2 (không bắt buộc), VD: "Size"'
+            value={form.optionName2}
+            onChange={(e) => setForm({ ...form, optionName2: e.target.value })}
+            className="border rounded-lg px-3 py-2"
+          />
+          <input
+            placeholder='Các giá trị. VD: "S, M, L, XL"'
+            value={form.optionValues2}
+            onChange={(e) => setForm({ ...form, optionValues2: e.target.value })}
+            className="border rounded-lg px-3 py-2"
+          />
+
+          <input
+            required={!form.optionValues1}
+            type="number"
+            placeholder={form.optionValues1 ? "Tồn kho (bỏ qua nếu đã có phân loại)" : "Tồn kho"}
+            value={form.stock}
+            onChange={(e) => setForm({ ...form, stock: e.target.value })}
             className="border rounded-lg px-3 py-2 sm:col-span-2"
           />
+          {form.optionValues1 && (
+            <p className="sm:col-span-2 text-xs text-gray-400 -mt-2">
+              Sản phẩm có phân loại: sau khi lưu, vào phần "Quản lý biến thể" bên dưới danh sách để nhập tồn kho/giá riêng cho từng loại.
+            </p>
+          )}
+
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input
               type="checkbox"
@@ -181,20 +264,77 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
       <div className="bg-white rounded-xl shadow-sm divide-y">
         {products.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 p-4">
-            <img src={p.imageUrl} alt={p.name} className="w-14 h-14 rounded-lg object-cover bg-gray-100" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{p.name}</p>
-              <p className="text-xs text-gray-500">{p.category} • Tồn: {p.stock}</p>
+          <div key={p.id}>
+            <div className="flex items-center gap-3 p-4">
+              <img src={p.imageUrl} alt={p.name} className="w-14 h-14 rounded-lg object-cover bg-gray-100" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{p.name}</p>
+                <p className="text-xs text-gray-500">
+                  {p.category}
+                  {p.variants.length > 0 ? ` • ${p.variants.length} phân loại` : ` • Tồn: ${p.stock}`}
+                </p>
+              </div>
+              <span className="text-brand font-semibold text-sm">{formatVND(p.price)}</span>
+              {!p.isActive && <span className="text-xs bg-gray-200 text-gray-500 rounded px-2 py-0.5">Ẩn</span>}
+              {p.variants.length > 0 && (
+                <button
+                  onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                  className="text-sm text-gray-500 hover:underline ml-2"
+                >
+                  {expandedId === p.id ? "Ẩn biến thể" : "Quản lý biến thể"}
+                </button>
+              )}
+              <button onClick={() => startEdit(p)} className="text-sm text-brand hover:underline ml-2">
+                Sửa
+              </button>
+              <button onClick={() => handleDelete(p.id)} className="text-sm text-red-500 hover:underline">
+                Xóa
+              </button>
             </div>
-            <span className="text-brand font-semibold text-sm">{formatVND(p.price)}</span>
-            {!p.isActive && <span className="text-xs bg-gray-200 text-gray-500 rounded px-2 py-0.5">Ẩn</span>}
-            <button onClick={() => startEdit(p)} className="text-sm text-brand hover:underline ml-2">
-              Sửa
-            </button>
-            <button onClick={() => handleDelete(p.id)} className="text-sm text-red-500 hover:underline">
-              Xóa
-            </button>
+
+            {expandedId === p.id && p.variants.length > 0 && (
+              <div className="px-4 pb-4">
+                <div className="bg-gray-50 rounded-lg p-3 overflow-x-auto">
+                  <table className="w-full text-sm min-w-[420px]">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="pb-2 font-normal">Phân loại</th>
+                        <th className="pb-2 font-normal w-28">Tồn kho</th>
+                        <th className="pb-2 font-normal w-40">Giá riêng (bỏ trống = mặc định)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {p.variants.map((v) => (
+                        <tr key={v.id} className="border-t">
+                          <td className="py-2">{variantLabel(v)}</td>
+                          <td className="py-2">
+                            <input
+                              type="number"
+                              value={v.stock}
+                              onChange={(e) => updateVariant(p.id, v.id, { stock: Number(e.target.value) || 0 })}
+                              className="w-20 border rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="py-2">
+                            <input
+                              type="number"
+                              placeholder={String(p.price)}
+                              value={v.priceOverride ?? ""}
+                              onChange={(e) =>
+                                updateVariant(p.id, v.id, {
+                                  priceOverride: e.target.value === "" ? null : Number(e.target.value),
+                                })
+                              }
+                              className="w-32 border rounded px-2 py-1"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {products.length === 0 && (

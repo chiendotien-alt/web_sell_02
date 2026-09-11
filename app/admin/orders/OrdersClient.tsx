@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { formatVND } from "@/lib/format";
 
-type OrderItem = { id: string; quantity: number; price: number; product: { name: string } };
+type OrderItem = {
+  id: string;
+  quantity: number;
+  price: number;
+  variantLabel: string | null;
+  product: { name: string };
+};
 type Order = {
   id: string;
   customerName: string;
@@ -75,7 +81,8 @@ export default function OrdersClient({ initialOrders }: { initialOrders: Order[]
             <div className="text-sm text-gray-600 border-t pt-2 mt-2 space-y-0.5">
               {o.items.map((it) => (
                 <p key={it.id}>
-                  {it.product.name} x{it.quantity} — {formatVND(it.price * it.quantity)}
+                  {it.product.name}
+                  {it.variantLabel ? ` (${it.variantLabel})` : ""} x{it.quantity} — {formatVND(it.price * it.quantity)}
                 </p>
               ))}
               {o.note && <p className="text-gray-400 italic">Ghi chú: {o.note}</p>}

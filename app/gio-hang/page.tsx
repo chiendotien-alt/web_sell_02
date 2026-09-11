@@ -13,7 +13,12 @@ export default function CartPage() {
   function handleCheckoutViaChat() {
     if (items.length === 0) return;
     const summary = items
-      .map((i) => `- ${i.name} x${i.quantity} (${formatVND(i.price * i.quantity)})`)
+      .map(
+        (i) =>
+          `- ${i.name}${i.variantLabel ? ` (${i.variantLabel})` : ""} x${i.quantity} (${formatVND(
+            i.price * i.quantity
+          )})`
+      )
       .join("\n");
     openChat(
       `Mình muốn đặt các sản phẩm sau:\n${summary}\nTổng cộng: ${formatVND(
@@ -39,31 +44,32 @@ export default function CartPage() {
 
       <div className="bg-white rounded-xl shadow-sm divide-y">
         {items.map((item) => (
-          <div key={item.productId} className="flex items-center gap-3 p-4">
+          <div key={`${item.productId}-${item.variantId ?? "base"}`} className="flex items-center gap-3 p-4">
             <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
               <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="64px" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-800 truncate">{item.name}</p>
+              {item.variantLabel && <p className="text-xs text-gray-400">{item.variantLabel}</p>}
               <p className="text-brand font-semibold text-sm">{formatVND(item.price)}</p>
             </div>
             <div className="flex items-center border rounded-lg overflow-hidden">
               <button
                 className="w-8 h-8 hover:bg-gray-100"
-                onClick={() => setQuantity(item.productId, item.quantity - 1)}
+                onClick={() => setQuantity(item.productId, item.variantId, item.quantity - 1)}
               >
                 −
               </button>
               <span className="w-8 text-center text-sm">{item.quantity}</span>
               <button
                 className="w-8 h-8 hover:bg-gray-100"
-                onClick={() => setQuantity(item.productId, item.quantity + 1)}
+                onClick={() => setQuantity(item.productId, item.variantId, item.quantity + 1)}
               >
                 +
               </button>
             </div>
             <button
-              onClick={() => removeItem(item.productId)}
+              onClick={() => removeItem(item.productId, item.variantId)}
               className="text-gray-400 hover:text-red-500 text-sm ml-2"
               aria-label="Xóa"
             >

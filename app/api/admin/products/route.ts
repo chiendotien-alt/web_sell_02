@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/adminAuth";
+import { parseOptionValues, syncProductVariants } from "@/lib/variants";
 
 function slugify(text: string) {
   return text
@@ -14,7 +15,10 @@ function slugify(text: string) {
 
 export async function GET() {
   if (!isAdminAuthed()) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
-  const products = await prisma.product.findMany({ orderBy: { createdAt: "desc" } });
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { variants: true },
+  });
   return NextResponse.json({ products });
 }
 
@@ -29,6 +33,9 @@ export async function POST(req: NextRequest) {
     slug = `${slugBase}-${i++}`;
   }
 
+  const values1 = parseOptionValues(body.optionValues1);
+  const values2 = parseOptionValues(body.optionValues2);
+
   const product = await prisma.product.create({
     data: {
       name: body.name,
@@ -40,8 +47,16 @@ export async function POST(req: NextRequest) {
       stock: Number(body.stock) || 0,
       category: body.category || "Khác",
       isActive: body.isActive !== false,
+      optionName1: values1.length ? body.optionName1 || null : null,
+      optionName2: values2.length ? body.optionName2 || null : null,
     },
   });
 
-  return NextResponse.json({ product });
+  if (values1.length || values2.length) {
+    await syncProductVariants(product.id, values1, values2);
+  }
+
+  const full = await prisma.product.findUnique({ where: { id: product.id }, include: { variants: true } });
+
+  return NextResponse.json({ product: full });
 }

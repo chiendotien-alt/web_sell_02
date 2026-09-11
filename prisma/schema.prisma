@@ -15,15 +15,31 @@ model Product {
   name        String
   slug        String   @unique
   description String
-  price       Int // đơn vị: VNĐ
+  price       Int // đơn vị: VNĐ — giá mặc định, dùng khi biến thể không có giá riêng
   compareAt   Int? // giá gạch ngang (nếu có khuyến mãi)
   imageUrl    String
-  stock       Int      @default(0)
+  stock       Int      @default(0) // chỉ dùng khi sản phẩm KHÔNG có phân loại
   category    String   @default("Khác")
   isActive    Boolean  @default(true)
+  // Tên 2 nhóm phân loại, ví dụ "Màu sắc", "Size" — để trống nếu sản phẩm không có phân loại
+  optionName1 String?
+  optionName2 String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   orderItems  OrderItem[]
+  variants    ProductVariant[]
+}
+
+// Một biến thể cụ thể của sản phẩm, ví dụ "Đỏ / Size M"
+model ProductVariant {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  optionValue1  String? // ví dụ "Đỏ"
+  optionValue2  String? // ví dụ "M"
+  stock         Int      @default(0)
+  priceOverride Int? // để trống = dùng giá mặc định của sản phẩm
+  orderItems    OrderItem[]
 }
 
 model Conversation {
@@ -60,13 +76,16 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-  price     Int // giá tại thời điểm đặt hàng
+  id           String          @id @default(cuid())
+  orderId      String
+  order        Order           @relation(fields: [orderId], references: [id])
+  productId    String
+  product      Product         @relation(fields: [productId], references: [id])
+  variantId    String?
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  variantLabel String? // lưu lại tên phân loại tại thời điểm đặt hàng, ví dụ "Đỏ / M"
+  quantity     Int
+  price        Int // giá tại thời điểm đặt hàng
 }
 
 model AdminSession {
