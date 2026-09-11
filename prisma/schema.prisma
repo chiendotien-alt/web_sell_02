@@ -17,7 +17,8 @@ model Product {
   description String
   price       Int // đơn vị: VNĐ — giá mặc định, dùng khi biến thể không có giá riêng
   compareAt   Int? // giá gạch ngang (nếu có khuyến mãi)
-  imageUrl    String
+  imageUrl    String // ảnh đại diện chính
+  images      String[] @default([]) // các ảnh phụ khác (nếu có)
   stock       Int      @default(0) // chỉ dùng khi sản phẩm KHÔNG có phân loại
   category    String   @default("Khác")
   isActive    Boolean  @default(true)

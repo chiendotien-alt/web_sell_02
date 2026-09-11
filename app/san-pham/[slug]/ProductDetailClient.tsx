@@ -23,6 +23,7 @@ type Product = {
   price: number;
   compareAt: number | null;
   imageUrl: string;
+  images: string[];
   stock: number;
   optionName1: string | null;
   optionName2: string | null;
@@ -31,6 +32,11 @@ type Product = {
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const hasVariants = product.variants.length > 0;
+  const allImages = useMemo(
+    () => Array.from(new Set([product.imageUrl, ...product.images].filter(Boolean))),
+    [product.imageUrl, product.images]
+  );
+  const [activeImage, setActiveImage] = useState(allImages[0]);
 
   const values1 = useMemo(
     () => Array.from(new Set(product.variants.map((v) => v.optionValue1).filter(Boolean))) as string[],
@@ -104,14 +110,31 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 grid md:grid-cols-2 gap-6">
-        <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden">
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 40vw"
-          />
+        <div>
+          <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden">
+            <Image
+              src={activeImage}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 40vw"
+            />
+          </div>
+          {allImages.length > 1 && (
+            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+              {allImages.map((img) => (
+                <button
+                  key={img}
+                  onClick={() => setActiveImage(img)}
+                  className={`relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition ${
+                    activeImage === img ? "border-brand" : "border-transparent"
+                  }`}
+                >
+                  <Image src={img} alt="" fill className="object-cover" sizes="64px" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

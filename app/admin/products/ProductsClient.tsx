@@ -19,6 +19,7 @@ type Product = {
   price: number;
   compareAt: number | null;
   imageUrl: string;
+  images: string[];
   stock: number;
   category: string;
   isActive: boolean;
@@ -33,6 +34,7 @@ const emptyForm = {
   price: "",
   compareAt: "",
   imageUrl: "",
+  imagesRaw: "",
   stock: "",
   category: "",
   isActive: true,
@@ -68,6 +70,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
       price: String(p.price),
       compareAt: p.compareAt ? String(p.compareAt) : "",
       imageUrl: p.imageUrl,
+      imagesRaw: (p.images || []).join("\n"),
       stock: String(p.stock),
       category: p.category,
       isActive: p.isActive,
@@ -181,11 +184,24 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             className="border rounded-lg px-3 py-2"
           />
           <input
-            placeholder="Link ảnh sản phẩm (URL)"
+            placeholder="Link ảnh sản phẩm (URL) — ảnh đại diện chính"
             value={form.imageUrl}
             onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
             className="border rounded-lg px-3 py-2"
           />
+
+          <div className="sm:col-span-2">
+            <label className="text-sm text-gray-600 block mb-1">
+              Ảnh phụ khác (không bắt buộc) — mỗi link 1 dòng
+            </label>
+            <textarea
+              placeholder={"https://...anh1.jpg\nhttps://...anh2.jpg"}
+              value={form.imagesRaw}
+              onChange={(e) => setForm({ ...form, imagesRaw: e.target.value })}
+              className="border rounded-lg px-3 py-2 w-full"
+              rows={3}
+            />
+          </div>
 
           <div className="sm:col-span-2 border-t pt-3 mt-1">
             <p className="text-sm font-medium text-gray-700 mb-2">

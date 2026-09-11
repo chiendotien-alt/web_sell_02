@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/adminAuth";
 import { parseOptionValues, syncProductVariants } from "@/lib/variants";
+import { parseImageUrls } from "@/lib/images";
 
 function slugify(text: string) {
   return text
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
       price: Number(body.price) || 0,
       compareAt: body.compareAt ? Number(body.compareAt) : null,
       imageUrl: body.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",
+      images: parseImageUrls(body.imagesRaw),
       stock: Number(body.stock) || 0,
       category: body.category || "Khác",
       isActive: body.isActive !== false,

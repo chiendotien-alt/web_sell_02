@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/adminAuth";
 import { parseOptionValues, syncProductVariants } from "@/lib/variants";
+import { parseImageUrls } from "@/lib/images";
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   if (!isAdminAuthed()) return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
@@ -18,6 +19,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       price: Number(body.price) || 0,
       compareAt: body.compareAt ? Number(body.compareAt) : null,
       imageUrl: body.imageUrl,
+      images: parseImageUrls(body.imagesRaw),
       stock: Number(body.stock) || 0,
       category: body.category,
       isActive: !!body.isActive,

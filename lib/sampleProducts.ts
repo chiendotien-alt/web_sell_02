@@ -7,6 +7,10 @@ export const sampleProducts = [
     price: 149000,
     compareAt: 199000,
     imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600",
+    images: [
+      "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=600",
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=600",
+    ],
     stock: 0,
     category: "Thời trang",
     optionName1: "Màu sắc",
