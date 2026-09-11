@@ -5,6 +5,7 @@ import Image from "next/image";
 import { formatVND } from "@/lib/format";
 import { useCartStore } from "@/lib/cartStore";
 import { useChatUiStore } from "@/lib/chatUiStore";
+import CheckoutModal, { type CheckoutItem } from "@/components/CheckoutModal";
 
 type Variant = {
   id: string;
@@ -43,6 +44,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [selected1, setSelected1] = useState<string | null>(null);
   const [selected2, setSelected2] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [showCheckout, setShowCheckout] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const openChat = useChatUiStore((s) => s.open);
 
@@ -83,18 +85,26 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     );
   }
 
-  function handleBuyNowViaChat() {
-    if (!canBuy) return;
+  function handleChatQuestion() {
     const variantPart = variantText() ? ` (${variantText()})` : "";
-    openChat(
-      `Mình muốn đặt mua "${product.name}"${variantPart} số lượng ${quantity}. Giúp mình chốt đơn nhé.`
-    );
+    openChat(`Cho mình hỏi về sản phẩm "${product.name}"${variantPart} nhé.`);
   }
+
+  const checkoutItems: CheckoutItem[] = [
+    {
+      productId: product.id,
+      variantId: selectedVariant?.id ?? null,
+      variantLabel: variantText(),
+      name: product.name,
+      price: effectivePrice,
+      quantity,
+    },
+  ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 grid md:grid-cols-2 gap-6">
-        <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 grid md:grid-cols-2 gap-6">
+        <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden">
           <Image
             src={product.imageUrl}
             alt={product.name}
@@ -105,22 +115,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
 
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{product.name}</h1>
+          <h1 className="text-xl font-semibold text-ink">{product.name}</h1>
 
           <div className="mt-3 flex items-baseline gap-3">
             <span className="text-2xl text-brand font-bold">{formatVND(effectivePrice)}</span>
             {product.compareAt && (
-              <span className="text-gray-400 line-through">{formatVND(product.compareAt)}</span>
+              <span className="text-ink-soft line-through">{formatVND(product.compareAt)}</span>
             )}
           </div>
 
-          <p className="mt-4 text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+          <p className="mt-4 text-ink-muted text-sm leading-relaxed whitespace-pre-wrap">
             {product.description}
           </p>
 
           {values1.length > 0 && (
             <div className="mt-5">
-              <p className="text-sm text-gray-600 mb-2">{product.optionName1 || "Phân loại"}</p>
+              <p className="text-sm text-ink-muted mb-2">{product.optionName1 || "Phân loại"}</p>
               <div className="flex flex-wrap gap-2">
                 {values1.map((v) => (
                   <button
@@ -129,7 +139,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     className={`px-3 py-1.5 rounded-lg border text-sm transition ${
                       selected1 === v
                         ? "border-brand text-brand bg-brand-light"
-                        : "border-gray-300 text-gray-600 hover:border-gray-400"
+                        : "border-gray-300 text-ink-muted hover:border-gray-400"
                     }`}
                   >
                     {v}
@@ -141,7 +151,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
           {values2.length > 0 && (
             <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">{product.optionName2 || "Phân loại"}</p>
+              <p className="text-sm text-ink-muted mb-2">{product.optionName2 || "Phân loại"}</p>
               <div className="flex flex-wrap gap-2">
                 {values2.map((v) => (
                   <button
@@ -150,7 +160,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     className={`px-3 py-1.5 rounded-lg border text-sm transition ${
                       selected2 === v
                         ? "border-brand text-brand bg-brand-light"
-                        : "border-gray-300 text-gray-600 hover:border-gray-400"
+                        : "border-gray-300 text-ink-muted hover:border-gray-400"
                     }`}
                   >
                     {v}
@@ -160,7 +170,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           )}
 
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-ink-soft">
             {hasVariants
               ? needsSelection
                 ? "Chọn phân loại để xem tình trạng còn hàng"
@@ -173,14 +183,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </p>
 
           <div className="mt-5 flex items-center gap-3">
-            <span className="text-sm text-gray-600">Số lượng</span>
-            <div className="flex items-center border rounded-lg overflow-hidden">
-              <button className="w-9 h-9 hover:bg-gray-100" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
+            <span className="text-sm text-ink-muted">Số lượng</span>
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <button className="w-9 h-9 hover:bg-gray-50" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
                 −
               </button>
               <span className="w-10 text-center">{quantity}</span>
               <button
-                className="w-9 h-9 hover:bg-gray-100"
+                className="w-9 h-9 hover:bg-gray-50"
                 onClick={() => setQuantity((q) => Math.min(Math.max(effectiveStock, 1), q + 1))}
               >
                 +
@@ -197,18 +207,25 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               Thêm vào giỏ
             </button>
             <button
-              onClick={handleBuyNowViaChat}
+              onClick={() => canBuy && setShowCheckout(true)}
               disabled={!canBuy}
               className="bg-brand hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg px-5 py-3 font-medium flex-1"
             >
-              💬 Nhắn tin đặt ngay
+              Đặt ngay
             </button>
           </div>
-          <p className="mt-2 text-xs text-gray-400">
-            Đặt hàng qua khung chat — bot sẽ hỏi thông tin giao hàng và chốt đơn giúp bạn.
-          </p>
+          <button
+            onClick={handleChatQuestion}
+            className="mt-3 text-sm text-ink-muted hover:text-brand transition"
+          >
+            💬 Có thắc mắc? Chat với shop
+          </button>
         </div>
       </div>
+
+      {showCheckout && (
+        <CheckoutModal items={checkoutItems} onClose={() => setShowCheckout(false)} />
+      )}
     </div>
   );
 }

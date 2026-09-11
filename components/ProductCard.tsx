@@ -36,12 +36,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           </span>
         )}
       </div>
-      <div className="p-3">
-        <p className="text-sm text-gray-800 line-clamp-2 min-h-[2.5rem]">{product.name}</p>
-        <div className="mt-1.5 flex items-baseline gap-2">
+      <div className="p-3.5">
+        <p className="text-sm text-ink line-clamp-2 min-h-[2.5rem] leading-snug">{product.name}</p>
+        <div className="mt-2 flex items-baseline gap-2">
           <span className="text-brand font-semibold">{formatVND(product.price)}</span>
           {product.compareAt && (
-            <span className="text-gray-400 text-xs line-through">
+            <span className="text-ink-soft text-xs line-through">
               {formatVND(product.compareAt)}
             </span>
           )}

@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { createOrder, resolveProductAndVariant } from "./orders";
 
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models";
@@ -184,103 +185,44 @@ async function executeCreateOrder(input: any, conversationId: string) {
     throw new Error("Danh sách sản phẩm trống.");
   }
 
-  const products = await prisma.product.findMany({
-    where: { slug: { in: items.map((i: any) => i.productSlug) } },
-    include: { variants: true },
-  });
-
-  let total = 0;
-  const orderItemsData: {
-    productId: string;
-    variantId: string | null;
-    variantLabel: string | null;
-    quantity: number;
-    price: number;
-  }[] = [];
+  const resolvedItems: { productId: string; variantId: string | null; quantity: number }[] = [];
+  const displayItems: { name: string; variant: string | null; quantity: number }[] = [];
 
   for (const item of items) {
-    const product = products.find((p) => p.slug === item.productSlug);
-    if (!product) throw new Error(`Không tìm thấy sản phẩm: ${item.productSlug}`);
-
-    if (product.variants.length > 0) {
-      const variant = product.variants.find(
-        (v) =>
-          (v.optionValue1 ?? null) === (item.option1 ?? null) &&
-          (v.optionValue2 ?? null) === (item.option2 ?? null)
+    const resolved = await resolveProductAndVariant(item.productSlug, item.option1, item.option2);
+    if (!resolved) throw new Error(`Không tìm thấy sản phẩm: ${item.productSlug}`);
+    if (resolved.product.variants.length > 0 && !resolved.variantId) {
+      throw new Error(
+        `Sản phẩm "${resolved.product.name}" cần chọn đúng phân loại (${[
+          resolved.product.optionName1,
+          resolved.product.optionName2,
+        ]
+          .filter(Boolean)
+          .join(" / ")}) có trong danh mục.`
       );
-      if (!variant) {
-        throw new Error(
-          `Sản phẩm "${product.name}" cần chọn đúng phân loại (${[product.optionName1, product.optionName2]
-            .filter(Boolean)
-            .join(" / ")}) trong danh mục.`
-        );
-      }
-      if (variant.stock < item.quantity) {
-        throw new Error(
-          `Loại "${[variant.optionValue1, variant.optionValue2].filter(Boolean).join(" / ")}" của "${product.name}" chỉ còn ${variant.stock} trong kho.`
-        );
-      }
-      const price = variant.priceOverride ?? product.price;
-      total += price * item.quantity;
-      orderItemsData.push({
-        productId: product.id,
-        variantId: variant.id,
-        variantLabel: [variant.optionValue1, variant.optionValue2].filter(Boolean).join(" / "),
-        quantity: item.quantity,
-        price,
-      });
-    } else {
-      if (product.stock < item.quantity) {
-        throw new Error(`Sản phẩm "${product.name}" chỉ còn ${product.stock} trong kho.`);
-      }
-      total += product.price * item.quantity;
-      orderItemsData.push({
-        productId: product.id,
-        variantId: null,
-        variantLabel: null,
-        quantity: item.quantity,
-        price: product.price,
-      });
     }
+    resolvedItems.push({ productId: resolved.productId, variantId: resolved.variantId, quantity: item.quantity });
+    displayItems.push({
+      name: resolved.product.name,
+      variant: [item.option1, item.option2].filter(Boolean).join(" / ") || null,
+      quantity: item.quantity,
+    });
   }
 
-  const order = await prisma.order.create({
-    data: {
-      conversationId,
-      customerName,
-      phone,
-      address,
-      note: note || null,
-      paymentMethod: paymentMethod || "COD",
-      total,
-      items: { create: orderItemsData },
-    },
-    include: { items: { include: { product: true } } },
+  const order = await createOrder({
+    items: resolvedItems,
+    customerName,
+    phone,
+    address,
+    note,
+    paymentMethod,
+    conversationId,
   });
-
-  for (const item of orderItemsData) {
-    if (item.variantId) {
-      await prisma.productVariant.update({
-        where: { id: item.variantId },
-        data: { stock: { decrement: item.quantity } },
-      });
-    } else {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      });
-    }
-  }
 
   return {
     success: true,
     orderId: order.id,
     total: order.total,
-    items: order.items.map((i) => ({
-      name: i.product.name,
-      variant: i.variantLabel,
-      quantity: i.quantity,
-      price: i.price,
-    })),
+    items: displayItems,
   };
 }
