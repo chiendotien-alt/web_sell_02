@@ -10,6 +10,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Ảnh trưng bày (lookbook) hiển thị ở trang chủ — không gắn với sản phẩm cụ thể,
+// dùng để khoe không gian/quy trình làm hàng, ảnh đẹp về sản phẩm...
+model ShowcaseImage {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  caption   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model Product {
   id          String   @id @default(cuid())
   name        String

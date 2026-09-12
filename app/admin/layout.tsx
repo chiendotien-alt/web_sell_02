@@ -14,6 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin" className="hover:text-brand-light">Tổng quan</Link>
             <Link href="/admin/products" className="hover:text-brand-light">Sản phẩm</Link>
             <Link href="/admin/orders" className="hover:text-brand-light">Đơn hàng</Link>
+            <Link href="/admin/showcase" className="hover:text-brand-light">Trưng bày</Link>
             <Link href="/" className="hover:text-brand-light ml-auto">Xem website →</Link>
             <LogoutButton />
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { getVisitorId } from "@/lib/visitor";
 import { useChatUiStore } from "@/lib/chatUiStore";
 
@@ -60,75 +61,99 @@ export default function ChatWidget() {
   return (
     <>
       {/* Nút nổi */}
-      {!isOpen && (
-        <button
-          onClick={() => open()}
-          className="fixed bottom-5 right-5 z-50 bg-brand hover:bg-brand-dark text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center text-2xl transition"
-          aria-label="Mở khung chat"
-        >
-          💬
-        </button>
-      )}
-
-      {isOpen && (
-        <div className="fixed bottom-5 right-5 z-50 w-[92vw] max-w-sm h-[70vh] max-h-[560px] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
-          <div className="bg-brand text-white px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-sm">Nhắn tin với shop</p>
-              <p className="text-xs text-white/80">Thường trả lời ngay</p>
-            </div>
-            <button onClick={close} className="text-white/90 hover:text-white text-xl leading-none">
-              ×
-            </button>
-          </div>
-
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
-                    m.role === "user"
-                      ? "bg-brand text-white rounded-br-sm"
-                      : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
-                  }`}
-                >
-                  {m.content}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white text-gray-400 rounded-2xl rounded-bl-sm shadow-sm px-3 py-2 text-sm">
-                  Đang trả lời...
-                </div>
-              </div>
-            )}
-          </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              sendMessage(input);
-            }}
-            className="border-t p-2 flex gap-2"
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            key="chat-fab"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => open()}
+            className="fixed bottom-5 right-5 z-50 bg-brand hover:bg-brand-dark text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center text-2xl"
+            aria-label="Mở khung chat"
           >
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Nhập tin nhắn..."
-              className="flex-1 border rounded-full px-4 py-2 text-sm outline-none focus:border-brand"
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="bg-brand hover:bg-brand-dark disabled:opacity-40 text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0"
-              aria-label="Gửi"
+            💬
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="chat-panel"
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.97 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="fixed bottom-5 right-5 z-50 w-[92vw] max-w-sm h-[70vh] max-h-[560px] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden"
+          >
+            <div className="bg-brand text-white px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-sm">Nhắn tin với shop</p>
+                <p className="text-xs text-white/80">Thường trả lời ngay</p>
+              </div>
+              <button onClick={close} className="text-white/90 hover:text-white text-xl leading-none">
+                ×
+              </button>
+            </div>
+
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50">
+              {messages.map((m, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-brand text-white rounded-br-sm"
+                        : "bg-white text-gray-800 rounded-bl-sm shadow-sm"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                </motion.div>
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-white text-gray-400 rounded-2xl rounded-bl-sm shadow-sm px-3 py-2 text-sm">
+                    Đang trả lời...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendMessage(input);
+              }}
+              className="border-t p-2 flex gap-2"
             >
-              ➤
-            </button>
-          </form>
-        </div>
-      )}
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Nhập tin nhắn..."
+                className="flex-1 border rounded-full px-4 py-2 text-sm outline-none focus:border-brand"
+              />
+              <button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="bg-brand hover:bg-brand-dark disabled:opacity-40 text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0"
+                aria-label="Gửi"
+              >
+                ➤
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
