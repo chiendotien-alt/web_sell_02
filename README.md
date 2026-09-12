@@ -63,6 +63,28 @@ Lưu ý: gói miễn phí có giới hạn số tin nhắn/phút — với shop 
 2. Hỏi bot vài câu về sản phẩm, thử đặt hàng luôn qua chat.
 3. Vào `/admin/orders` để xem đơn hàng vừa đặt.
 
+## Bước 7 (khuyến khích): Nhận thông báo đơn hàng mới qua Telegram
+
+Mỗi khi có đơn hàng mới (dù khách chốt qua chat, qua form, hay bạn tự tạo thủ công), điện thoại bạn sẽ nhận được tin nhắn báo ngay.
+
+1. Mở app Telegram, tìm và nhắn chuyện với tài khoản **@BotFather** (đây là bot chính thức của Telegram để tạo bot khác).
+2. Gõ lệnh `/newbot`, làm theo hướng dẫn: đặt tên bot tùy ý, rồi đặt "username" cho bot (phải kết thúc bằng `bot`, ví dụ `shopcuaban_notify_bot`).
+3. BotFather sẽ trả về một dòng dạng `123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` — đây là **TELEGRAM_BOT_TOKEN**, copy lại.
+4. Tìm và mở chuyện với chính bot bạn vừa tạo (bấm vào link BotFather đưa, hoặc tìm đúng username vừa đặt), nhắn bất kỳ tin gì (ví dụ "hi") để bot ghi nhận bạn.
+5. Mở trình duyệt, dán vào địa chỉ này (thay `<TOKEN>` bằng token ở bước 3):
+   `https://api.telegram.org/bot<TOKEN>/getUpdates`
+   Bạn sẽ thấy một đoạn chữ JSON, tìm số ở chỗ `"chat":{"id":XXXXXXXXX` — số đó chính là **TELEGRAM_CHAT_ID**.
+6. Vào Vercel → project → Settings → Environment Variables, thêm 2 biến:
+
+   | Key | Value |
+   |---|---|
+   | `TELEGRAM_BOT_TOKEN` | token ở bước 3 |
+   | `TELEGRAM_CHAT_ID` | số ở bước 5 |
+
+7. Vào tab Deployments, bấm vào bản mới nhất → nút "..." → **Redeploy** để áp dụng.
+
+Từ giờ, có đơn mới là điện thoại bạn sẽ có tin nhắn Telegram báo ngay, kèm đầy đủ tên khách, SĐT, sản phẩm, tổng tiền.
+
 ---
 
 ## Những điều cần biết thêm

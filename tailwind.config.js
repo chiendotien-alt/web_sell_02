@@ -8,25 +8,26 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#ee4d2d",
-          dark: "#c23f20",
-          light: "#fff0ed",
+          DEFAULT: "#a5682f",
+          dark: "#7a4a1e",
+          light: "#f6ede0",
         },
         ink: {
-          DEFAULT: "#1f2430",
-          muted: "#6b7280",
-          soft: "#9aa0ac",
+          DEFAULT: "#2b241d",
+          muted: "#6b5d4f",
+          soft: "#a69684",
         },
         surface: {
           DEFAULT: "#ffffff",
-          muted: "#f5f6f8",
+          muted: "#f7f2ea",
         },
         accent: {
-          teal: "#0ea55a",
+          teal: "#6b7a4f",
         },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
       },
     },
   },

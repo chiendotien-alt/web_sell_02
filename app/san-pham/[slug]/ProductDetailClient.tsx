@@ -138,7 +138,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
 
         <div>
-          <h1 className="text-xl font-semibold text-ink">{product.name}</h1>
+          <h1 className="font-serif text-2xl font-semibold text-ink">{product.name}</h1>
 
           <div className="mt-3 flex items-baseline gap-3">
             <span className="text-2xl text-brand font-bold">{formatVND(effectivePrice)}</span>

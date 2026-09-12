@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { notifyNewOrderTelegram } from "./notify";
 
 export type OrderItemInput = {
   productId: string;
@@ -110,6 +111,8 @@ export async function createOrder(input: CreateOrderInput) {
       });
     }
   }
+
+  notifyNewOrderTelegram(order).catch(() => {});
 
   return order;
 }

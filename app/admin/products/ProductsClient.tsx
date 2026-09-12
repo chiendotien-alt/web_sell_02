@@ -178,7 +178,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             className="border rounded-lg px-3 py-2"
           />
           <input
-            placeholder="Danh mục (VD: Thời trang)"
+            placeholder="Danh mục (VD: Giỏ & Rổ)"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
             className="border rounded-lg px-3 py-2"
